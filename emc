@@ -20,6 +20,7 @@ my $BinDir = "/home/eggdrop/bin";
 my $DEBUG_MODE = "off";
 my $EGGDROPPORT = "3344";
 my $TelnetCommand = "/usr/bin/telnet";
+my $TextDir = "$EGGDROPDIR/text";
 
 ###################################################
 # No changes below here
@@ -154,6 +155,8 @@ sub MainMenu
                                       '9', 'Kill Eggdrop Process',
                                       '10', 'Update Utils',
                                       '11', 'Telnet to bot',
+                                      '12', 'Edit MOTD file',
+                                      '13', 'Edit Banner file',
                                       'q', 'Quit EMC' ] );
 }
 
@@ -236,6 +239,16 @@ while (-1)
 	{
                 # Telnet to bot
                 system("$TelnetCommand localhost $EGGDROPPORT");
+	}
+	elsif ($menuselection eq "12")
+	{
+		# Edit MOTD file
+		system("$FileEditor $TextDir/motd");
+	}
+	elsif ($menuselection eq "13")
+	{
+		# Edit Banner file
+		system("$FileEditor $TextDir/banner");
 	}
 
 }
