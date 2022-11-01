@@ -21,6 +21,7 @@ my $DEBUG_MODE = "off";
 my $EGGDROPPORT = "3344";
 my $TelnetCommand = "/usr/bin/telnet";
 my $FindCommand = "/usr/bin/find";
+my $KillCommand = "/usr/bin/kill";
 my $TextDir = "$EGGDROPDIR/text";
 my $FilesysDir = "$EGGDROPDIR/text/filesys/";
 my $KlinesFile = "$EGGDROPDIR/klines";
@@ -137,6 +138,37 @@ sub UpdateTools
 	}
 }
 
+sub KillBot
+{
+	my $PidFile = "/tmp/mypid";
+	my $BotPid = "";
+
+	# Find the pid file
+	system("$FindCommand $EGGDROPDIR/pid.* -print > $PidFile");
+
+	# Read in the pid file
+	open my $file_one, '<', "$PidFile" or die "Can't open $PidFile: $!\n";
+	while (<$file_one>)
+	{
+		# $_ contains each record from the file in turn
+		$BotPid = $_;
+		chop ($BotPid);
+	}
+	close ($file_one);
+
+	open $file_one, '<', "$BotPid" or die "Can't open $BotPid: $!\n";
+	while (<$file_one>)
+	{
+		# $_ contains each record from the file in turn
+		$BotPid = $_;
+		chop ($BotPid);
+		# print "pid = '$BotPid'\n";
+	}
+	close ($file_one);
+
+	system("$KillCommand $BotPid");
+}
+
 sub MainMenu
 {
 	my $WantRespawn="ON";
@@ -231,7 +263,7 @@ while (-1)
 	        if ($running ne "")
 		{
 			# Process is running, kill it
-			system("killall eggdrop.conf");
+			KillBot();
 			sleep(5);
 		}
 	}
