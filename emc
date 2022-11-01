@@ -19,17 +19,13 @@ my $UpdateCommand = "/usr/bin/git pull";
 my $BinDir = "/home/eggdrop/bin";
 my $DEBUG_MODE = "off";
 my $EGGDROPPORT = "3344";
+my $TelnetCommand = "/usr/bin/telnet";
 
 ###################################################
 # No changes below here
 ###################################################
 
-my $EMC_ver = "1.0";
-my $Record = "false";	# Are results saved?
-my $TempDir = "/tmp";
-my $RobotName = "";
-my $BotVersion = "";
-my $UserName = "";
+my $EMC_ver = "1.1";
 my $ServerStatus = "foo";
 
 sub PrintDebugCommand
@@ -157,6 +153,7 @@ sub MainMenu
                                       '8', 'View Screen Log',
                                       '9', 'Kill Eggdrop Process',
                                       '10', 'Update Utils',
+                                      '11', 'Telnet to bot',
                                       'q', 'Quit EMC' ] );
 }
 
@@ -234,6 +231,11 @@ while (-1)
 	{
 		# Update Menu
 		UpdateTools();
+	}
+	elsif ($menuselection eq "11")
+	{
+                # Telnet to bot
+                system("$TelnetCommand localhost $EGGDROPPORT");
 	}
 
 }
