@@ -1,0 +1,241 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+
+use UI::Dialog;
+use Term::ReadKey;
+use Term::ANSIScreen qw(cls);
+
+my $FileEditor = "/bin/nano";
+my $InitDName = "/home/eggdrop/bin/eggdrop";
+my $EGGDROPDIR = "/home/eggdrop/eggdrop";
+my $BackupCommand = "/home/eggdrop/EggdropBackup/eggdropbackup.pl";
+my $ScreenLog = "$EGGDROPDIR/logs/eggdrop.log";
+my $Pager = "/usr/bin/less";
+my $EMCDir = "/home/eggdrop/EggdropManagementConsole";
+my $BackupToolDir = "/home/eggdrop/FiveMBackup";
+my $StartupDir = "/home/eggdrop/EggdropStartup";
+my $UpdateCommand = "/usr/bin/git pull";
+my $BinDir = "/home/eggdrop/bin";
+my $DEBUG_MODE = "off";
+my $EGGDROPPORT = "3344";
+
+###################################################
+# No changes below here
+###################################################
+
+my $EMC_ver = "1.0";
+my $Record = "false";	# Are results saved?
+my $TempDir = "/tmp";
+my $RobotName = "";
+my $BotVersion = "";
+my $UserName = "";
+my $ServerStatus = "foo";
+
+sub PrintDebugCommand
+{
+	if ($DEBUG_MODE eq "off")
+	{
+		return;
+	}
+	my $PassedString = shift;
+	print "About to run:\n$PassedString\n";
+	print "Press Enter To Run This:";
+	my $entered = <STDIN>;
+}
+
+my $d = new UI::Dialog ( backtitle => "Eggdrop Management Console v$EMC_ver", height => 20, width => 65, listheight => 5,
+	order => [ 'ascii', 'cdialog', 'xdialog' ]);
+
+my $windowtitle = "Welcome to the Eggdrop Management Console!";
+my $enjoyedtitle = "We hope you enjoyed EMC!";
+my $introtext =
+"This is the Eggdrop Management Console, a utility for Eggdrop operators
+to manage their servers from a text GUI rather than the command line.";
+
+$d->msgbox( title => $windowtitle, text => $introtext );
+
+if (($d->state() eq "ESC") || ($d->state() eq "CANCEL"))
+{
+	exit 0;
+}
+
+my $menuselection = "";
+
+sub CheckServerStatus
+{
+	my $running=`ps ax|grep eggdrop.conf|grep -v grep`;
+	if ($running ne "")
+	{
+		$ServerStatus = "Running";
+	}
+	else
+	{
+		$ServerStatus = "Stopped";
+	}
+
+}
+
+sub DoUpdate
+{
+	my $DesiredDir = $_[0];
+
+	# Update desired utility
+	chdir ($DesiredDir);
+	PrintDebugCommand("Running $UpdateCommand in $DesiredDir\n");
+	system("$UpdateCommand");
+	print "Press Enter To Continue";
+	my $entered = <STDIN>;
+}
+
+sub UpdateToolsMenu
+{
+	my $WantRespawn="ON";
+	CheckServerStatus();
+	if (-f "$EGGDROPDIR/nostart")
+	{
+		$WantRespawn="OFF";
+	}
+	$menuselection = $d->menu( title => "Update Tools Menu", text => "Server is $ServerStatus and respawn is $WantRespawn - Select one:",
+                            list => [ '1', 'Update EMC',
+                                      '2', 'Update Backup',
+                                      '3', 'Update Startup',
+                                      'q', 'Main Menu' ] );
+}
+
+sub UpdateTools
+{
+	while (-1)
+	{
+		UpdateToolsMenu();
+		if (($menuselection eq "CANCEL") || ($menuselection eq "ESC") || ($menuselection eq "") || ($menuselection eq "q") || ($menuselection eq "Q"))
+		{
+			return;
+		}
+		elsif ($menuselection eq "1")
+		{
+			# Update EMC
+			DoUpdate($EMCDir);
+		}
+		elsif ($menuselection eq "2")
+		{
+			# Update BackupToolDir
+			DoUpdate($BackupToolDir);
+		}
+		elsif ($menuselection eq "3")
+		{
+			# Update Startup
+			DoUpdate($StartupDir);
+			if (! -d $BinDir)
+			{
+				print "Binary dir $BinDir not found, creating...\n";
+				system("mkdir -p $BinDir");
+			}
+			system("cp $StartupDir/eggdrop $BinDir");
+			system("cp $StartupDir/starteggdrop $EGGDROPDIR");
+		}
+	}
+}
+
+sub MainMenu
+{
+	my $WantRespawn="ON";
+	CheckServerStatus();
+	if (-f "$EGGDROPDIR/nostart")
+	{
+		$WantRespawn="OFF";
+	}
+
+	$menuselection = $d->menu( title => "Main Menu", text => "Server is $ServerStatus and respawn is $WantRespawn - Select one:",
+                            list => [ '1', 'Start Watchdog',
+                                      '2', 'Stop Watchdog',
+                                      '3', 'Server Console',
+                                      '4', 'Turn Off Respawn',
+                                      '5', 'Turn Respawn On',
+                                      '6', 'Edit Eggdrop Config',
+                                      '7', 'Backup Eggdrop',
+                                      '8', 'View Screen Log',
+                                      '9', 'Kill Eggdrop Process',
+                                      '10', 'Update Utils',
+                                      'q', 'Quit EMC' ] );
+}
+
+while (-1)
+{
+	MainMenu();
+	if (($menuselection eq "CANCEL") || ($menuselection eq "ESC") || ($menuselection eq "") || ($menuselection eq "q") || ($menuselection eq "Q"))
+	{
+		$d->msgbox( title => $enjoyedtitle, text => "Thanks for using EMC..." );
+		exit 0;
+	}
+	if ($menuselection eq "1")
+	{
+                if ($d->yesno( text => "Confirm starting the server watchdog", text => "Are you sure you want to start the server watchdog? You should likely use option #9 instead..." ))
+                {
+                        system("$InitDName start");
+                        sleep(10);
+                }
+	}
+	elsif ($menuselection eq "2")
+	{
+		if ($d->yesno( text => "Confirm stopping the server watchdog", text => "Are you sure you want to shut down the server watchdog?" ))
+		{
+			system("$InitDName stop");
+			sleep(5);
+		}
+	}
+	elsif ($menuselection eq "3")
+	{
+		$d->msgbox( text => "To exit the Eggdrop console and return to EMC press CTRL-A CTRL-D" );
+		system("screen -r Eggdrop");
+	}
+	elsif ($menuselection eq "4")
+	{
+		# Turn off respawn
+		system("touch $EGGDROPDIR/nostart");
+	}
+	elsif ($menuselection eq "5")
+	{
+		# Turn respawn back on
+		if (-f "$EGGDROPDIR/nostart")
+		{
+			unlink("$EGGDROPDIR/nostart");
+		}
+	}
+	elsif ($menuselection eq "6")
+	{
+		# Edit Eggdrop config file
+		system("$FileEditor $EGGDROPDIR/eggdrop.conf");
+	}
+	elsif ($menuselection eq "7")
+	{
+                # Run a backup
+                system("clear");
+                system("$BackupCommand");
+                print "Press Enter To Continue";
+                my $entered = <STDIN>;
+	}
+	elsif ($menuselection eq "8")
+	{
+                # View the log file
+                system("$Pager $ScreenLog");
+	}
+	elsif ($menuselection eq "9")
+	{
+		my $running=`ps ax|grep eggdrop.conf|grep -v grep`;
+	        if ($running ne "")
+		{
+			# Process is running, kill it
+			system("killall eggdrop.conf");
+			sleep(5);
+		}
+	}
+	elsif ($menuselection eq "10")
+	{
+		# Update Menu
+		UpdateTools();
+	}
+
+}
+
+exit 0;
