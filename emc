@@ -20,13 +20,16 @@ my $BinDir = "/home/eggdrop/bin";
 my $DEBUG_MODE = "off";
 my $EGGDROPPORT = "3344";
 my $TelnetCommand = "/usr/bin/telnet";
+my $FindCommand = "/usr/bin/find";
 my $TextDir = "$EGGDROPDIR/text";
+my $FilesysDir = "$EGGDROPDIR/text/filesys/";
+my $KlinesFile = "$EGGDROPDIR/klines";
 
 ###################################################
 # No changes below here
 ###################################################
 
-my $EMC_ver = "1.1";
+my $EMC_ver = "1.2";
 my $ServerStatus = "foo";
 
 sub PrintDebugCommand
@@ -157,6 +160,8 @@ sub MainMenu
                                       '11', 'Telnet to bot',
                                       '12', 'Edit MOTD file',
                                       '13', 'Edit Banner file',
+                                      '14', 'List filesys',
+                                      '15', 'Edit klines',
                                       'q', 'Quit EMC' ] );
 }
 
@@ -250,7 +255,17 @@ while (-1)
 		# Edit Banner file
 		system("$FileEditor $TextDir/banner");
 	}
-
+	elsif ($menuselection eq "14")
+	{
+		# Display filesys contents
+		system("$FindCommand $FilesysDir -print > /tmp/filecontents");
+                system("$Pager /tmp/filecontents");
+	}
+	elsif ($menuselection eq "15")
+	{
+		# Edit the klines file
+		system("$FileEditor $KlinesFile");
+	}
 }
 
 exit 0;
